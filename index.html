@@ -672,6 +672,100 @@
                 container.appendChild(card);
             });
         }
+        function renderLogs(logsArray) {
+            const container = document.getElementById('logContainer');
+            container.innerHTML = '';
+
+            if (!logsArray || logsArray.length === 0) {
+                container.innerHTML = `<div class="text-center py-6 text-slate-400 text-sm">ไม่พบประวัติการเบิกหรือยืมสินค้าตามเงื่อนไข</div>`;
+                return;
+            }
+
+            logsArray.forEach((log, logIndex) => {
+                let itemsHtml = '';
+                if (log.items && Array.isArray(log.items)) {
+                    log.items.forEach(i => {
+                        itemsHtml += `
+                            <tr class="border-b border-slate-100 hover:bg-slate-50 text-xs sm:text-sm">
+                                <td class="py-2 px-3 text-slate-800 font-medium">${i.name}</td>
+                                <td class="py-2 px-3 text-center text-blue-600 font-semibold">${i.qty} ${i.unit}</td>
+                                <td class="py-2 px-3 text-right text-slate-600">${i.price.toLocaleString()} ฿</td>
+                                <td class="py-2 px-3 text-right font-semibold text-slate-800">${i.total.toLocaleString()} ฿</td>
+                            </tr>
+                        `;
+                    });
+                }
+
+                let badgeClass = "bg-blue-100 text-blue-700 border-blue-200";
+                let badgeText = log.txType || 'เบิกถาวร';
+                if (log.txType === 'ยืมสินค้า') {
+                    if (log.isReturned) {
+                        badgeClass = "bg-emerald-100 text-emerald-700 border-emerald-200";
+                        badgeText = "ยืม (คืนแล้ว)";
+                    } else {
+                        badgeClass = "bg-amber-100 text-amber-700 border-amber-200";
+                        badgeText = "กำลังยืมอยู่";
+                    }
+                }
+
+                let returnBtnHtml = '';
+                if (log.txType === 'ยืมสินค้า' && !log.isReturned) {
+                    returnBtnHtml = `
+                        <button onclick="returnJobItems(${logIndex})" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium transition flex items-center space-x-1 shadow-sm">
+                            <i class="fa-solid fa-rotate-left"></i>
+                            <span>คืนสินค้า</span>
+                        </button>
+                    `;
+                }
+
+                const card = document.createElement('div');
+                card.className = "bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden";
+                card.innerHTML = `
+                    <div class="p-3.5 bg-slate-50/70 hover:bg-slate-100/70 transition flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                        <div class="flex items-center space-x-2.5 cursor-pointer flex-grow w-full sm:w-auto" onclick="toggleJobDropdown(${logIndex})">
+                            <div class="w-7 h-7 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs flex-shrink-0">
+                                <i id="job-icon-${logIndex}" class="fa-solid fa-chevron-down transition-transform duration-200"></i>
+                            </div>
+                            <div class="min-w-0 flex-grow">
+                                <div class="flex items-center space-x-2">
+                                    <h3 class="font-bold text-slate-900 text-sm sm:text-base truncate">${log.jobName}</h3>
+                                    <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold border ${badgeClass}">${badgeText}</span>
+                                </div>
+                                <span class="text-xs text-slate-400">วันที่: ${log.jobDate} | ${log.items.length} รายการ</span>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center space-x-2 w-full sm:w-auto justify-between sm:justify-end border-t sm:border-0 pt-2 sm:pt-0 border-slate-100">
+                            <span class="text-xs sm:text-sm font-bold text-blue-600">${(log.grandTotal || 0).toLocaleString()} ฿</span>
+                            <div class="flex items-center space-x-2">
+                                ${returnBtnHtml}
+                                <button onclick="openEditModal(${logIndex})" class="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg text-xs font-medium transition flex items-center space-x-1 border border-amber-200">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                    <span>แก้ไข</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="job-content-${logIndex}" class="hidden p-3 border-t border-slate-100 bg-white">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-50 text-[11px] font-semibold text-slate-500 uppercase">
+                                        <th class="py-2 px-3">ชื่ออุปกรณ์</th>
+                                        <th class="py-2 px-3 text-center">จำนวน</th>
+                                        <th class="py-2 px-3 text-right">ราคา/หน่วย</th>
+                                        <th class="py-2 px-3 text-right">รวมเงิน</th>
+                                    </tr>
+                                </thead>
+                                <tbody>${itemsHtml}</tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
     </script>
 </body>
 </html>
