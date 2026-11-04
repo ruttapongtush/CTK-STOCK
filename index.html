@@ -61,12 +61,12 @@
             <div class="px-4 sm:px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                 <h2 class="font-bold text-slate-800 text-sm sm:text-base flex items-center space-x-2">
                     <i class="fa-solid fa-box-open text-blue-600"></i>
-                    <span>รายการสินค้าในคลัง</span>
+                    <span>รายการสินค้าในคลัง (จาก Google Sheets)</span>
                 </h2>
                 <span id="productCount" class="text-xs font-semibold px-2.5 py-1 bg-slate-200 text-slate-700 rounded-full">0 รายการ</span>
             </div>
             
-            <!-- Desktop Table View (Hidden on Mobile) -->
+            <!-- Desktop Table View -->
             <div class="hidden md:block overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                     <thead>
@@ -84,7 +84,7 @@
                 </table>
             </div>
 
-            <!-- Mobile Card View (Show only on Mobile) -->
+            <!-- Mobile Card View -->
             <div id="productMobileGrid" class="grid grid-cols-1 gap-3 p-3.5 md:hidden"></div>
         </div>
 
@@ -103,7 +103,7 @@
 
     </main>
 
-    <!-- Sticky Mobile Bottom Bar (เฉพาะมือถือ) -->
+    <!-- Sticky Mobile Bottom Bar -->
     <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-3 z-40 md:hidden shadow-lg">
         <button onclick="toggleCartModal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl flex items-center justify-between shadow-md active:scale-[0.98] transition">
             <div class="flex items-center space-x-2">
@@ -176,7 +176,7 @@
             <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
                 <h3 class="font-bold text-base sm:text-lg text-slate-800 flex items-center space-x-2">
                     <i class="fa-solid fa-pen-to-square text-blue-600"></i>
-                    <span>แก้ไขข้อมูลสินค้าและรูปภาพ</span>
+                    <span>แก้ไขข้อมูลสินค้า</span>
                 </h3>
                 <button onclick="toggleEditProductModal()" class="text-slate-400 hover:text-slate-600 w-8 h-8 rounded-full flex items-center justify-center bg-slate-200/50 transition">
                     <i class="fa-solid fa-xmark"></i>
@@ -199,91 +199,39 @@
                         <input type="number" id="editProdPrice" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
                     </div>
                 </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">ลิงก์รูปภาพ (Image URL)</label>
-                    <input type="text" id="editProdImage" placeholder="วางลิงก์รูปภาพออนไลน์ (เช่น https://...)" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                </div>
             </div>
 
             <div class="p-4 border-t border-slate-100 bg-slate-50 flex justify-end space-x-3">
                 <button onclick="toggleEditProductModal()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl font-medium text-sm transition">ยกเลิก</button>
-                <button onclick="saveProductEdit()" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium text-sm transition shadow-sm">บันทึก</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Edit Job Log Modal -->
-    <div id="editLogModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
-            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                <h3 class="font-bold text-base sm:text-lg text-slate-800 flex items-center space-x-2">
-                    <i class="fa-solid fa-pen-to-square text-blue-600"></i>
-                    <span>แก้ไขประวัติการเบิก/ยืม</span>
-                </h3>
-                <button onclick="toggleEditModal()" class="text-slate-400 hover:text-slate-600 w-8 h-8 rounded-full flex items-center justify-center bg-slate-200/50 transition">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-            
-            <div id="editModalScrollContainer" class="p-4 sm:p-6 overflow-y-auto flex-grow space-y-4">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">ชื่องาน / รายละเอียด</label>
-                        <input type="text" id="editJobName" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">วันที่ใช้งาน</label>
-                        <input type="date" id="editJobDate" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                    </div>
-                </div>
-
-                <div class="space-y-3" id="editItemList"></div>
-
-                <div class="pt-2 border-t border-slate-100 relative">
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">ค้นหาและเพิ่มสินค้าลงในรายการ:</label>
-                    <div class="relative">
-                        <input type="text" id="productSearchInput" oninput="filterSearchableProducts(this.value)" placeholder="พิมพ์ชื่อหรือรหัสสินค้าเพื่อค้นหา..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <div id="searchableDropdownList" class="absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-48 overflow-y-auto hidden z-20"></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="p-4 border-t border-slate-100 bg-slate-50 flex justify-between items-center">
-                <div>
-                    <span class="text-xs sm:text-sm text-slate-500">ราคารวมใหม่: </span>
-                    <span id="editTotalPrice" class="font-bold text-blue-600 text-sm sm:text-base">0.00 ฿</span>
-                </div>
-                <div class="flex space-x-2">
-                    <button onclick="toggleEditModal()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl font-medium text-sm transition">ยกเลิก</button>
-                    <button onclick="saveEditedLog()" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium text-sm transition shadow-sm">บันทึก</button>
-                </div>
+                <button onclick="saveProductEditLocally()" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium text-sm transition shadow-sm">บันทึก</button>
             </div>
         </div>
     </div>
 
     <script>
-        let products = [
-            { id: "CON-25", name: "คอนเนคเตอร์ 25 mm.", category: "อุปกรณ์ติดตั้ง", stock: 15, unit: "ชิ้น", price: 6, image: "" },
-            { id: "PIPE-25", name: "ต่อตรง 25 mm.", category: "อุปกรณ์ติดตั้ง", stock: 35, unit: "ชิ้น", price: 4, image: "" },
-            { id: "CLAMP-25", name: "แคล้มก้ามปู 25 mm", category: "อุปกรณ์ติดตั้ง", stock: 42, unit: "ชิ้น", price: 4, image: "" },
-            { id: "FLEX-25", name: "ท่ออ่อน PVC 25 mm", category: "อุปกรณ์ติดตั้ง", stock: 18, unit: "เมตร", price: 24, image: "" },
-            { id: "PVC-25", name: "ท่อ PVC 25 mm HACO", category: "อุปกรณ์ติดตั้ง", stock: 10, unit: "เส้น", price: 63, image: "" },
-            { id: "CON-20", name: "คอนเนคเตอร์ 20 mm.", category: "อุปกรณ์ติดตั้ง", stock: 11, unit: "ชิ้น", price: 5, image: "" },
-            { id: "PIPE-20", name: "ต่อตรง 20 mm", category: "อุปกรณ์ติดตั้ง", stock: 59, unit: "ชิ้น", price: 3, image: "" },
-            { id: "CLAMP-20", name: "แคล้มก้ามปู 20 mm.", category: "อุปกรณ์ติดตั้ง", stock: 33, unit: "ชิ้น", price: 3, image: "" },
-            { id: "US-6624A", name: "Boot cat6 \"LINK\"", category: "อุปกรณ์ติดตั้ง", stock: 57, unit: "ตัว", price: 5, image: "" },
-            { id: "US-1002AA", name: "Cat6 male \"LINK\"", category: "อุปกรณ์ติดตั้ง", stock: 118, unit: "ตัว", price: 9, image: "" },
-            { id: "US-1006SL", name: "Cat6 female \"LINK\"", category: "อุปกรณ์ติดตั้ง", stock: 10, unit: "ตัว", price: 90, image: "" },
-            { id: "US-9116LSZH", name: "LAN Cable Cat6 INDOOR \"LINK\"", category: "Cable", stock: 465, unit: "เมตร", price: 15, image: "" },
-            { id: "BOX-6X8", name: "BOX PVC 6X8", category: "อุปกรณ์ต่างๆ", stock: 1, unit: "BOX", price: 119, image: "" }
-        ];
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyDmCFUxsltEAgx7GNo5nkYO26JDQOeYXPQtjG5jMX5H9kG4eOH2_sOgcxdhnT1vy-k/exec";
 
+        let products = [];
         let cart = [];
         let logs = [];
         let currentCategory = 'ALL';
-        let editingLogIndex = null;
 
         document.getElementById('jobDateInput').valueAsDate = new Date();
+
+        // โหลดข้อมูลสินค้าจาก Google Sheets
+        async function loadProductsFromSheet() {
+            try {
+                const response = await fetch(GOOGLE_SCRIPT_URL);
+                const data = await response.json();
+                products = data;
+                renderProducts();
+            } catch (error) {
+                console.error("Error loading products:", error);
+                alert("ไม่สามารถดึงข้อมูลจาก Google Sheets ได้");
+            }
+        }
+
+        loadProductsFromSheet();
 
         function renderProducts(filterText = '') {
             const tbody = document.getElementById('productTableBody');
@@ -293,7 +241,7 @@
 
             const filtered = products.filter(p => {
                 const matchCat = currentCategory === 'ALL' || p.category === currentCategory;
-                const matchText = p.name.toLowerCase().includes(filterText.toLowerCase()) || p.id.toLowerCase().includes(filterText.toLowerCase());
+                const matchText = (p.name || '').toLowerCase().includes(filterText.toLowerCase()) || (p.id || '').toLowerCase().includes(filterText.toLowerCase());
                 return matchCat && matchText;
             });
 
@@ -319,7 +267,7 @@
                     <td class="py-3.5 px-6 text-center"><span class="px-3 py-1 bg-blue-50 text-blue-600 rounded-xl font-bold text-xs shadow-sm inline-block">${p.stock} ${p.unit}</span></td>
                     <td class="py-3.5 px-6 text-right font-medium text-slate-700">${p.price.toLocaleString()} ฿</td>
                     <td class="py-3.5 px-6 text-center flex items-center justify-center space-x-2">
-                        <button onclick="openEditProductModal('${p.id}')" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-medium transition shadow-sm" title="แก้ไขข้อมูลและรูปภาพ"><i class="fa-solid fa-pen"></i></button>
+                        <button onclick="openEditProductModal('${p.id}')" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-medium transition shadow-sm"><i class="fa-solid fa-pen"></i></button>
                         <button onclick="addToCart('${p.id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-xl text-xs font-medium transition shadow-sm flex items-center space-x-1"><i class="fa-solid fa-cart-plus"></i><span>ใส่รถเข็น</span></button>
                     </td>
                 `;
@@ -342,50 +290,13 @@
                         </div>
                     </div>
                     <div class="flex flex-col space-y-1.5 flex-shrink-0">
-                        <button onclick="addToCart('${p.id}')" class="bg-blue-600 hover:bg-blue-700 active:scale-95 text-white p-2.5 rounded-xl text-xs font-medium transition shadow-sm flex items-center justify-center">
+                        <button onclick="addToCart('${p.id}')" class="bg-blue-600 hover:bg-blue-700 text-white p-2.5 rounded-xl text-xs font-medium transition shadow-sm flex items-center justify-center">
                             <i class="fa-solid fa-cart-plus text-sm"></i>
-                        </button>
-                        <button onclick="openEditProductModal('${p.id}')" class="bg-slate-100 hover:bg-slate-200 text-slate-600 p-2 rounded-xl text-xs transition text-center">
-                            <i class="fa-solid fa-pen"></i>
                         </button>
                     </div>
                 `;
                 mobileGrid.appendChild(card);
             });
-        }
-
-        function openEditProductModal(id) {
-            const p = products.find(item => item.id === id);
-            if (!p) return;
-
-            document.getElementById('editProdId').value = p.id;
-            document.getElementById('editProdNameDisplay').value = `${p.name} (${p.id})`;
-            document.getElementById('editProdStock').value = p.stock;
-            document.getElementById('editProdPrice').value = p.price;
-            document.getElementById('editProdImage').value = p.image || '';
-
-            toggleEditProductModal();
-        }
-
-        function toggleEditProductModal() {
-            document.getElementById('editProductModal').classList.toggle('hidden');
-        }
-
-        function saveProductEdit() {
-            const id = document.getElementById('editProdId').value;
-            const newStock = parseFloat(document.getElementById('editProdStock').value) || 0;
-            const newPrice = parseFloat(document.getElementById('editProdPrice').value) || 0;
-            const newImage = document.getElementById('editProdImage').value.trim();
-
-            const p = products.find(item => item.id === id);
-            if (p) {
-                p.stock = newStock;
-                p.price = newPrice;
-                p.image = newImage;
-            }
-
-            toggleEditProductModal();
-            renderProducts(document.getElementById('searchInput').value);
         }
 
         function filterCategory(cat) {
@@ -463,9 +374,7 @@
                             <input type="number" value="${item.qty}" min="1" max="${item.stock}" onchange="changeCartQty(${index}, this.value)" class="w-12 text-center text-xs sm:text-sm font-semibold focus:outline-none">
                             <span class="text-xs text-slate-500">${item.unit}</span>
                         </div>
-                        <button onclick="removeFromCart(${index})" class="text-rose-500 hover:text-rose-700 p-1.5">
-                            <i class="fa-solid fa-trash-can"></i>
-                        </button>
+                        <button onclick="removeFromCart(${index})" class="text-rose-500 hover:text-rose-700 p-1.5"><i class="fa-solid fa-trash-can"></i></button>
                     </div>
                 `;
                 cartList.appendChild(div);
@@ -494,11 +403,38 @@
         }
 
         function toggleCartModal() {
-            const modal = document.getElementById('cartModal');
-            modal.classList.toggle('hidden');
+            document.getElementById('cartModal').classList.toggle('hidden');
         }
 
-        function confirmCheckout() {
+        function openEditProductModal(id) {
+            const p = products.find(item => item.id === id);
+            if (!p) return;
+            document.getElementById('editProdId').value = p.id;
+            document.getElementById('editProdNameDisplay').value = `${p.name} (${p.id})`;
+            document.getElementById('editProdStock').value = p.stock;
+            document.getElementById('editProdPrice').value = p.price;
+            document.getElementById('editProductModal').classList.remove('hidden');
+        }
+
+        function toggleEditProductModal() {
+            document.getElementById('editProductModal').classList.add('hidden');
+        }
+
+        function saveProductEditLocally() {
+            const id = document.getElementById('editProdId').value;
+            const newStock = parseFloat(document.getElementById('editProdStock').value) || 0;
+            const newPrice = parseFloat(document.getElementById('editProdPrice').value) || 0;
+            const p = products.find(item => item.id === id);
+            if (p) {
+                p.stock = newStock;
+                p.price = newPrice;
+            }
+            toggleEditProductModal();
+            renderProducts(document.getElementById('searchInput').value);
+        }
+
+        // ฟังก์ชันยืนยันทำรายการ (บันทึกลง Sheets และตัดสต็อก)
+        async function confirmCheckout() {
             if (cart.length === 0) return;
 
             const txType = document.getElementById('transactionType').value;
@@ -509,13 +445,10 @@
             let sessionTotal = 0;
 
             cart.forEach(item => {
-                const prod = products.find(p => p.name === item.name);
-                if (prod) {
-                    prod.stock -= item.qty;
-                }
                 const itemTotal = item.qty * item.price;
                 sessionTotal += itemTotal;
                 sessionItems.push({
+                    id: item.id,
                     name: item.name,
                     qty: item.qty,
                     unit: item.unit,
@@ -524,373 +457,37 @@
                 });
             });
 
-            logs.unshift({
-                txType: txType,
-                jobName: jobName,
-                jobDate: jobDate,
-                isReturned: false,
-                items: sessionItems,
-                grandTotal: sessionTotal
-            });
-
-            cart = [];
-            document.getElementById('jobNameInput').value = '';
-            updateCartUI();
-            toggleCartModal();
-            renderProducts();
-            renderLogs();
-            alert(`บันทึกข้อมูล "${txType}" เรียบร้อยแล้ว!`);
-        }
-
-        function returnJobItems(logIndex) {
-            const log = logs[logIndex];
-            if (log.isReturned) return;
-
-            if (!confirm(`ยืนยันการคืนสินค้าของงาน "${log.jobName}"?`)) return;
-
-            log.items.forEach(i => {
-                const prod = products.find(p => p.name === i.name);
-                if (prod) {
-                    prod.stock += i.qty;
+            const payload = {
+                action: "checkout",
+                data: {
+                    txType: txType,
+                    jobName: jobName,
+                    jobDate: jobDate,
+                    items: sessionItems
                 }
-            });
+            };
 
-            log.isReturned = true;
-            renderProducts();
-            renderLogs();
-        }
-
-        function toggleJobDropdown(logIndex) {
-            const content = document.getElementById(`job-content-${logIndex}`);
-            const icon = document.getElementById(`job-icon-${logIndex}`);
-            content.classList.toggle('hidden');
-            icon.classList.toggle('rotate-180');
-        }
-
-        function renderLogs() {
-            const container = document.getElementById('logContainer');
-            container.innerHTML = '';
-
-            if (logs.length === 0) {
-                container.innerHTML = `<div class="text-center py-6 text-slate-400 text-sm">ยังไม่มีประวัติการเบิกหรือยืมสินค้า</div>`;
-                return;
-            }
-
-            logs.forEach((log, logIndex) => {
-                let itemsHtml = '';
-                log.items.forEach(i => {
-                    itemsHtml += `
-                        <tr class="border-b border-slate-100 hover:bg-slate-50 text-xs sm:text-sm">
-                            <td class="py-2 px-3 text-slate-800 font-medium">${i.name}</td>
-                            <td class="py-2 px-3 text-center text-blue-600 font-semibold">${i.qty} ${i.unit}</td>
-                            <td class="py-2 px-3 text-right text-slate-600">${i.price.toLocaleString()} ฿</td>
-                            <td class="py-2 px-3 text-right font-semibold text-slate-800">${i.total.toLocaleString()} ฿</td>
-                        </tr>
-                    `;
+            try {
+                await fetch(GOOGLE_SCRIPT_URL, {
+                    method: "POST",
+                    mode: "no-cors",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
                 });
 
-                let badgeClass = "bg-blue-100 text-blue-700 border-blue-200";
-                let badgeText = log.txType;
-                if (log.txType === 'ยืมสินค้า') {
-                    if (log.isReturned) {
-                        badgeClass = "bg-emerald-100 text-emerald-700 border-emerald-200";
-                        badgeText = "ยืม (คืนแล้ว)";
-                    } else {
-                        badgeClass = "bg-amber-100 text-amber-700 border-amber-200";
-                        badgeText = "กำลังยืมอยู่";
-                    }
-                }
-
-                let returnBtnHtml = '';
-                if (log.txType === 'ยืมสินค้า' && !log.isReturned) {
-                    returnBtnHtml = `
-                        <button onclick="returnJobItems(${logIndex})" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium transition flex items-center space-x-1 shadow-sm">
-                            <i class="fa-solid fa-rotate-left"></i>
-                            <span>คืนสินค้า</span>
-                        </button>
-                    `;
-                }
-
-                const card = document.createElement('div');
-                card.className = "bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden";
-                card.innerHTML = `
-                    <div class="p-3.5 bg-slate-50/70 hover:bg-slate-100/70 transition flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                        <div class="flex items-center space-x-2.5 cursor-pointer flex-grow w-full sm:w-auto" onclick="toggleJobDropdown(${logIndex})">
-                            <div class="w-7 h-7 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs flex-shrink-0">
-                                <i id="job-icon-${logIndex}" class="fa-solid fa-chevron-down transition-transform duration-200"></i>
-                            </div>
-                            <div class="min-w-0 flex-grow">
-                                <div class="flex items-center space-x-2">
-                                    <h3 class="font-bold text-slate-900 text-sm sm:text-base truncate">${log.jobName}</h3>
-                                    <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold border ${badgeClass}">${badgeText}</span>
-                                </div>
-                                <span class="text-xs text-slate-400">วันที่: ${log.jobDate} | ${log.items.length} รายการ</span>
-                            </div>
-                        </div>
-
-                        <div class="flex items-center space-x-2 w-full sm:w-auto justify-between sm:justify-end border-t sm:border-0 pt-2 sm:pt-0 border-slate-100">
-                            <span class="text-xs sm:text-sm font-bold text-blue-600">${log.grandTotal.toLocaleString()} ฿</span>
-                            <div class="flex items-center space-x-2">
-                                ${returnBtnHtml}
-                                <button onclick="openEditModal(${logIndex})" class="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg text-xs font-medium transition flex items-center space-x-1 border border-amber-200">
-                                    <i class="fa-solid fa-pen-to-square"></i>
-                                    <span>แก้ไข</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="job-content-${logIndex}" class="hidden p-3 border-t border-slate-100 bg-white">
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left border-collapse">
-                                <thead>
-                                    <tr class="bg-slate-50 text-[11px] font-semibold text-slate-500 uppercase">
-                                        <th class="py-2 px-3">ชื่ออุปกรณ์</th>
-                                        <th class="py-2 px-3 text-center">จำนวน</th>
-                                        <th class="py-2 px-3 text-right">ราคา/หน่วย</th>
-                                        <th class="py-2 px-3 text-right">รวมเงิน</th>
-                                    </tr>
-                                </thead>
-                                <tbody>${itemsHtml}</tbody>
-                            </table>
-                        </div>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
-        }
-
-        function openEditModal(logIndex) {
-            editingLogIndex = logIndex;
-            const log = logs[logIndex];
-
-            document.getElementById('editJobName').value = log.jobName;
-            document.getElementById('editJobDate').value = log.jobDate;
-            document.getElementById('productSearchInput').value = '';
-            document.getElementById('searchableDropdownList').classList.add('hidden');
-
-            renderEditItems();
-            toggleEditModal();
-        }
-
-        function toggleEditModal() {
-            document.getElementById('editLogModal').classList.toggle('hidden');
-        }
-
-        function renderEditItems() {
-            const listContainer = document.getElementById('editItemList');
-            listContainer.innerHTML = '';
-            const log = logs[editingLogIndex];
-
-            let total = 0;
-            log.items.forEach((item, index) => {
-                total += item.total;
-                const div = document.createElement('div');
-                div.className = "flex items-center justify-between p-2.5 bg-slate-50 border border-slate-200 rounded-xl gap-2";
-                div.innerHTML = `
-                    <div class="min-w-0 flex-grow">
-                        <h4 class="font-bold text-slate-800 text-xs sm:text-sm truncate">${item.name}</h4>
-                    </div>
-                    <div class="flex items-center space-x-1.5 flex-shrink-0">
-                        <input type="number" value="${item.price}" min="0" onchange="updateEditItemPrice(${index}, this.value)" class="w-16 text-right text-xs sm:text-sm font-semibold border rounded-lg px-1.5 py-1 text-slate-700">
-                        <span class="text-xs text-slate-500">฿</span>
-                        <input type="number" value="${item.qty}" min="1" onchange="updateEditItemQty(${index}, this.value)" class="w-12 text-center text-xs sm:text-sm font-semibold border rounded-lg px-1.5 py-1">
-                        <span class="text-xs text-slate-500">${item.unit}</span>
-                        <button onclick="removeEditItem(${index})" class="text-rose-500 hover:text-rose-700 p-1">
-                            <i class="fa-solid fa-trash-can"></i>
-                        </button>
-                    </div>
-                `;
-                listContainer.appendChild(div);
-            });
-
-            document.getElementById('editTotalPrice').innerText = `${total.toLocaleString()} ฿`;
-        }
-
-        function updateEditItemQty(itemIndex, val) {
-            let qty = parseInt(val) || 1;
-            if (qty <= 0) qty = 1;
-            const item = logs[editingLogIndex].items[itemIndex];
-            item.qty = qty;
-            item.total = item.qty * item.price;
-            renderEditItems();
-        }
-
-        function updateEditItemPrice(itemIndex, val) {
-            let price = parseFloat(val) || 0;
-            if (price < 0) price = 0;
-            const item = logs[editingLogIndex].items[itemIndex];
-            item.price = price;
-            item.total = item.qty * item.price;
-            renderEditItems();
-        }
-
-        function removeEditItem(itemIndex) {
-            logs[editingLogIndex].items.splice(itemIndex, 1);
-            renderEditItems();
-        }
-
-        function filterSearchableProducts(keyword) {
-            const dropdown = document.getElementById('searchableDropdownList');
-            dropdown.innerHTML = '';
-
-            if (!keyword.trim()) {
-                dropdown.classList.add('hidden');
-                return;
+                alert(`บันทึกข้อมูล "${txType}" เรียบร้อยแล้ว!`);
+                
+                cart = [];
+                document.getElementById('jobNameInput').value = '';
+                updateCartUI();
+                toggleCartModal();
+                loadProductsFromSheet(); // โหลดสต็อกล่าสุดจาก Google Sheets อีกครั้ง
+                
+            } catch (error) {
+                console.error("Error saving checkout:", error);
+                alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
             }
-
-            const matched = products.filter(p => 
-                p.name.toLowerCase().includes(keyword.toLowerCase()) || 
-                p.id.toLowerCase().includes(keyword.toLowerCase())
-            );
-
-            if (matched.length === 0) {
-                dropdown.innerHTML = `<div class="p-3 text-xs text-slate-400 text-center">ไม่พบสินค้าที่ค้นหา</div>`;
-                dropdown.classList.remove('hidden');
-                return;
-            }
-
-            matched.forEach(p => {
-                const itemDiv = document.createElement('div');
-                itemDiv.className = "px-3 py-2 hover:bg-blue-50 cursor-pointer text-xs sm:text-sm border-b border-slate-100 flex justify-between items-center";
-                itemDiv.innerHTML = `
-                    <span class="font-medium text-slate-800 truncate">${p.name} (${p.id})</span>
-                    <span class="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">${p.price} ฿</span>
-                `;
-                itemDiv.onclick = () => selectProductToAdd(p.id);
-                dropdown.appendChild(itemDiv);
-            });
-
-            dropdown.classList.remove('hidden');
         }
-
-        function selectProductToAdd(productId) {
-            const product = products.find(p => p.id === productId);
-            if (!product) return;
-
-            const log = logs[editingLogIndex];
-            const existing = log.items.find(i => i.name === product.name);
-            if (existing) {
-                existing.qty += 1;
-                existing.total = existing.qty * existing.price;
-            } else {
-                log.items.push({
-                    name: product.name,
-                    qty: 1,
-                    unit: product.unit,
-                    price: product.price,
-                    total: product.price
-                });
-            }
-
-            document.getElementById('productSearchInput').value = '';
-            document.getElementById('searchableDropdownList').classList.add('hidden');
-            renderEditItems();
-        }
-
-        function saveEditedLog() {
-            const log = logs[editingLogIndex];
-            log.jobName = document.getElementById('editJobName').value || 'รายการทั่วไป';
-            log.jobDate = document.getElementById('editJobDate').value || new Date().toISOString().split('T')[0];
-
-            let newGrandTotal = 0;
-            log.items.forEach(i => { newGrandTotal += i.total; });
-            log.grandTotal = newGrandTotal;
-
-            toggleEditModal();
-            renderLogs();
-        }
-
-        renderProducts();
-        renderLogs();
     </script>
-    <script>
-    // 🌐 นำ Web App URL ที่ได้จาก Google Apps Script มาวางตรงนี้
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyDmCFUxsltEAgx7GNo5nkYO26JDQOeYXPQtjG5jMX5H9kG4eOH2_sOgcxdhnT1vy-k/exec";
-
-    let products = [];
-    let cart = [];
-    let logs = [];
-    let currentCategory = 'ALL';
-    let editingLogIndex = null;
-
-    document.getElementById('jobDateInput').valueAsDate = new Date();
-
-    // 1. ฟังก์ชันดึงข้อมูลสินค้าจาก Google Sheets
-    async function loadProductsFromSheet() {
-        try {
-            const response = await fetch(GOOGLE_SCRIPT_URL);
-            const data = await response.json();
-            products = data;
-            renderProducts();
-        } catch (error) {
-            console.error("Error loading products:", error);
-            alert("ไม่สามารถดึงข้อมูลจาก Google Sheets ได้");
-        }
-    }
-
-    // เรียกใช้งานเมื่อเปิดหน้าเว็บ
-    loadProductsFromSheet();
-
-    // 2. ฟังก์ชันยืนยันทำรายการ (บันทึกลง Sheets และตัดสต็อก)
-    async function confirmCheckout() {
-        if (cart.length === 0) return;
-
-        const txType = document.getElementById('transactionType').value;
-        const jobName = document.getElementById('jobNameInput').value || (txType === 'ยืมสินค้า' ? 'ยืมอุปกรณ์ทั่วไป' : 'เบิกสินค้าทั่วไป');
-        const jobDate = document.getElementById('jobDateInput').value || new Date().toISOString().split('T')[0];
-
-        let sessionItems = [];
-        let sessionTotal = 0;
-
-        cart.forEach(item => {
-            const itemTotal = item.qty * item.price;
-            sessionTotal += itemTotal;
-            sessionItems.push({
-                id: item.id,
-                name: item.name,
-                qty: item.qty,
-                unit: item.unit,
-                price: item.price,
-                total: itemTotal
-            });
-        });
-
-        const payload = {
-            action: "checkout",
-            data: {
-                txType: txType,
-                jobName: jobName,
-                jobDate: jobDate,
-                items: sessionItems
-            }
-        };
-
-        try {
-            // ส่งข้อมูลไปบันทึกที่ Google Sheets ผ่าน Apps Script
-            await fetch(GOOGLE_SCRIPT_URL, {
-                method: "POST",
-                mode: "no-cors",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
-            });
-
-            alert(`บันทึกข้อมูล "${txType}" เรียบร้อยแล้ว!`);
-            
-            // ล้างค่าในรถเข็นและโหลดข้อมูลสต็อกใหม่จาก Sheets
-            cart = [];
-            document.getElementById('jobNameInput').value = '';
-            updateCartUI();
-            toggleCartModal();
-            loadProductsFromSheet();
-            
-        } catch (error) {
-            console.error("Error saving checkout:", error);
-            alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
-        }
-    }
-
-    // ฟังก์ชันอื่นๆ (renderProducts, filterCategory, ฯลฯ ใช้โค้ดชุดเดิมต่อท้ายได้เลย)
-</script>
 </body>
 </html>
