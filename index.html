@@ -66,6 +66,7 @@
                 <span id="productCount" class="text-xs font-semibold px-2.5 py-1 bg-slate-200 text-slate-700 rounded-full">0 รายการ</span>
             </div>
             
+            <!-- Desktop Table View -->
             <div class="hidden md:block overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                     <thead>
@@ -83,6 +84,7 @@
                 </table>
             </div>
 
+            <!-- Mobile Card View -->
             <div id="productMobileGrid" class="grid grid-cols-1 gap-3 p-3.5 md:hidden"></div>
         </div>
 
@@ -186,7 +188,7 @@
         </div>
     </div>
 
-    <!-- Edit Product Modal -->
+    <!-- Edit Product Modal (แก้ไขข้อมูลสต็อกหลัก) -->
     <div id="editProductModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col">
             <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
@@ -224,7 +226,7 @@
         </div>
     </div>
 
-    <!-- Edit Job Log Modal (ส่วนป๊อปอัปแก้ไขประวัติการเบิก) -->
+    <!-- Edit Log Modal (แก้ไขประวัติการเบิก/ยืม) -->
     <div id="editLogModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
             <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
@@ -255,7 +257,7 @@
             <div class="p-4 border-t border-slate-100 bg-slate-50 flex justify-between items-center">
                 <div>
                     <span class="text-xs sm:text-sm text-slate-500">ราคารวมใหม่: </span>
-                    <span id="editTotalPrice" class="font-bold text-blue-600 text-sm sm:text-base">0.00 ฿</span>
+                    <span id="editTotalPrice" class="font-bold text-blue-600 text-sm sm:text-base">0 ฿</span>
                 </div>
                 <div class="flex space-x-2">
                     <button onclick="toggleEditModal()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl font-medium text-sm transition">ยกเลิก</button>
@@ -275,6 +277,17 @@
         let editingLogIndex = null;
 
         document.getElementById('jobDateInput').valueAsDate = new Date();
+
+        // ฟังก์ชันฟอร์แมตวันที่ให้เป็น DD/MM/YYYY
+        function formatDateThai(dateString) {
+            if (!dateString) return '';
+            const d = new Date(dateString);
+            if (isNaN(d.getTime())) return dateString; // ถ้าไม่ใช่รูปแบบ Date ส่งกลับตามเดิม
+            const day = String(d.getDate()).padStart(2, '0');
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const year = d.getFullYear();
+            return `${day}/${month}/${year}`;
+        }
 
         async function loadDataFromSheet() {
             try {
@@ -612,79 +625,6 @@
             }
         }
 
-        // ฟังก์ชันเปิด Modal แก้ไขประวัติการเบิก/ยืม
-        function openEditModal(logIndex) {
-            editingLogIndex = logIndex;
-            const log = logs[logIndex];
-
-            document.getElementById('editJobName').value = log.jobName || '';
-            
-            // Format Date เป็น YYYY-MM-DD
-            let formattedDate = log.jobDate;
-            if (log.jobDate && log.jobDate.includes('T')) {
-                formattedDate = log.jobDate.split('T')[0];
-            }
-            document.getElementById('editJobDate').value = formattedDate || new Date().toISOString().split('T')[0];
-
-            renderEditItems();
-            toggleEditModal();
-        }
-
-        function toggleEditModal() {
-            document.getElementById('editLogModal').classList.toggle('hidden');
-        }
-
-        function renderEditItems() {
-            const listContainer = document.getElementById('editItemList');
-            listContainer.innerHTML = '';
-            const log = logs[editingLogIndex];
-
-            let total = 0;
-            log.items.forEach((item, index) => {
-                total += item.total;
-                const div = document.createElement('div');
-                div.className = "flex items-center justify-between p-2.5 bg-slate-50 border border-slate-200 rounded-xl gap-2";
-                div.innerHTML = `
-                    <div class="min-w-0 flex-grow">
-                        <h4 class="font-bold text-slate-800 text-xs sm:text-sm truncate">${item.name}</h4>
-                    </div>
-                    <div class="flex items-center space-x-1.5 flex-shrink-0">
-                        <input type="number" value="${item.price}" min="0" onchange="updateEditItemPrice(${index}, this.value)" class="w-16 text-right text-xs sm:text-sm font-semibold border rounded-lg px-1.5 py-1 text-slate-700">
-                        <span class="text-xs text-slate-500">฿</span>
-                        <input type="number" value="${item.qty}" min="1" onchange="updateEditItemQty(${index}, this.value)" class="w-12 text-center text-xs sm:text-sm font-semibold border rounded-lg px-1.5 py-1">
-                        <span class="text-xs text-slate-500">${item.unit}</span>
-                    </div>
-                `;
-                listContainer.appendChild(div);
-            });
-
-            document.getElementById('editTotalPrice').innerText = `${total.toLocaleString()} ฿`;
-        }
-
-        function updateEditItemQty(itemIndex, val) {
-            let qty = parseInt(val) || 1;
-            if (qty <= 0) qty = 1;
-            const item = logs[editingLogIndex].items[itemIndex];
-            item.qty = qty;
-            item.total = item.qty * item.price;
-            renderEditItems();
-        }
-
-        function updateEditItemPrice(itemIndex, val) {
-            let price = parseFloat(val) || 0;
-            if (price < 0) price = 0;
-            const item = logs[editingLogIndex].items[itemIndex];
-            item.price = price;
-            item.total = item.qty * item.price;
-            renderEditItems();
-        }
-
-        function saveEditedLog() {
-            toggleEditModal();
-            alert("บันทึกข้อมูลการแก้ไขเรียบร้อยแล้ว!");
-            renderLogs(logs);
-        }
-
         function toggleJobDropdown(logIndex) {
             const content = document.getElementById(`job-content-${logIndex}`);
             const icon = document.getElementById(`job-icon-${logIndex}`);
@@ -703,14 +643,18 @@
 
             logsArray.forEach((log, logIndex) => {
                 let itemsHtml = '';
+                let calculatedTotal = 0; // คำนวณราคารวมสดๆ จากรายการในงาน
+
                 if (log.items && Array.isArray(log.items)) {
                     log.items.forEach(i => {
+                        const itemTotal = i.total || (i.qty * i.price);
+                        calculatedTotal += itemTotal;
                         itemsHtml += `
                             <tr class="border-b border-slate-100 hover:bg-slate-50 text-xs sm:text-sm">
                                 <td class="py-2 px-3 text-slate-800 font-medium">${i.name}</td>
-                                <td class="py-2 px-3 text-center text-blue-600 font-semibold">${i.qty} ${i.unit}</td>
+                                <td class="py-2 px-3 text-center text-blue-600 font-semibold">${i.qty} ${i.unit || 'ชิ้น'}</td>
                                 <td class="py-2 px-3 text-right text-slate-600">${i.price.toLocaleString()} ฿</td>
-                                <td class="py-2 px-3 text-right font-semibold text-slate-800">${i.total.toLocaleString()} ฿</td>
+                                <td class="py-2 px-3 text-right font-semibold text-slate-800">${itemTotal.toLocaleString()} ฿</td>
                             </tr>
                         `;
                     });
@@ -751,12 +695,13 @@
                                     <h3 class="font-bold text-slate-900 text-sm sm:text-base truncate">${log.jobName}</h3>
                                     <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold border ${badgeClass}">${badgeText}</span>
                                 </div>
-                                <span class="text-xs text-slate-400">วันที่: ${log.jobDate} | ${log.items.length} รายการ</span>
+                                <span class="text-xs text-slate-400">วันที่: ${formatDateThai(log.jobDate)} | ${log.items.length} รายการ</span>
                             </div>
                         </div>
 
                         <div class="flex items-center space-x-2 w-full sm:w-auto justify-between sm:justify-end border-t sm:border-0 pt-2 sm:pt-0 border-slate-100">
-                            <span class="text-xs sm:text-sm font-bold text-blue-600">${(log.grandTotal || 0).toLocaleString()} ฿</span>
+                            <!-- แสดงราคารวมทุกรายการในงานนี้ -->
+                            <span class="text-xs sm:text-sm font-bold text-blue-600">${calculatedTotal.toLocaleString()} ฿</span>
                             <div class="flex items-center space-x-2">
                                 ${returnBtnHtml}
                                 <button onclick="openEditModal(${logIndex})" class="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg text-xs font-medium transition flex items-center space-x-1 border border-amber-200">
@@ -785,6 +730,107 @@
                 `;
                 container.appendChild(card);
             });
+        }
+
+        // เปิด Modal แก้ไขประวัติการเบิก
+        function openEditModal(logIndex) {
+            editingLogIndex = logIndex;
+            const log = logs[logIndex];
+
+            document.getElementById('editJobName').value = log.jobName || '';
+            
+            // แปลงรูปแบบวันที่ส่งเข้า <input type="date">
+            if (log.jobDate) {
+                const d = new Date(log.jobDate);
+                if (!isNaN(d.getTime())) {
+                    document.getElementById('editJobDate').value = d.toISOString().split('T')[0];
+                } else {
+                    document.getElementById('editJobDate').value = log.jobDate;
+                }
+            }
+
+            renderEditItems();
+            toggleEditModal();
+        }
+
+        function toggleEditModal() {
+            document.getElementById('editLogModal').classList.toggle('hidden');
+        }
+
+        // สลับเอา จำนวน ขึ้นก่อน ราคา/หน่วย
+        function renderEditItems() {
+            const listContainer = document.getElementById('editItemList');
+            listContainer.innerHTML = '';
+            const log = logs[editingLogIndex];
+
+            let total = 0;
+            log.items.forEach((item, index) => {
+                const itemTotal = item.qty * item.price;
+                total += itemTotal;
+
+                const div = document.createElement('div');
+                div.className = "flex items-center justify-between p-2.5 bg-slate-50 border border-slate-200 rounded-xl gap-2";
+                div.innerHTML = `
+                    <div class="min-w-0 flex-grow">
+                        <h4 class="font-bold text-slate-800 text-xs sm:text-sm truncate">${item.name}</h4>
+                    </div>
+                    <div class="flex items-center space-x-1.5 flex-shrink-0">
+                        <!-- 1. ช่องจำนวน (สลับขึ้นก่อน) -->
+                        <input type="number" value="${item.qty}" min="1" onchange="updateEditItemQty(${index}, this.value)" class="w-14 text-center text-xs sm:text-sm font-semibold border border-slate-300 rounded-lg px-1.5 py-1 focus:ring-1 focus:ring-blue-500">
+                        <span class="text-xs text-slate-500">${item.unit || 'ชิ้น'}</span>
+                        
+                        <span class="text-slate-300">|</span>
+
+                        <!-- 2. ช่องราคาต่อหน่วย -->
+                        <input type="number" value="${item.price}" min="0" onchange="updateEditItemPrice(${index}, this.value)" class="w-16 text-right text-xs sm:text-sm font-semibold border border-slate-300 rounded-lg px-1.5 py-1 text-slate-700 focus:ring-1 focus:ring-blue-500">
+                        <span class="text-xs text-slate-500">฿</span>
+
+                        <button onclick="removeEditItem(${index})" class="text-rose-500 hover:text-rose-700 p-1">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                `;
+                listContainer.appendChild(div);
+            });
+
+            document.getElementById('editTotalPrice').innerText = `${total.toLocaleString()} ฿`;
+        }
+
+        function updateEditItemQty(itemIndex, val) {
+            let qty = parseInt(val) || 1;
+            if (qty <= 0) qty = 1;
+            const item = logs[editingLogIndex].items[itemIndex];
+            item.qty = qty;
+            item.total = item.qty * item.price;
+            renderEditItems();
+        }
+
+        function updateEditItemPrice(itemIndex, val) {
+            let price = parseFloat(val) || 0;
+            if (price < 0) price = 0;
+            const item = logs[editingLogIndex].items[itemIndex];
+            item.price = price;
+            item.total = item.qty * item.price;
+            renderEditItems();
+        }
+
+        function removeEditItem(itemIndex) {
+            logs[editingLogIndex].items.splice(itemIndex, 1);
+            renderEditItems();
+        }
+
+        function saveEditedLog() {
+            const log = logs[editingLogIndex];
+            log.jobName = document.getElementById('editJobName').value || 'รายการทั่วไป';
+            log.jobDate = document.getElementById('editJobDate').value || new Date().toISOString().split('T')[0];
+
+            let newGrandTotal = 0;
+            log.items.forEach(i => { newGrandTotal += (i.qty * i.price); });
+            log.grandTotal = newGrandTotal;
+
+            toggleEditModal();
+            renderLogs(logs);
+            alert("อัปเดตประวัติชั่วคราวเรียบร้อยแล้ว!");
         }
     </script>
 </body>
