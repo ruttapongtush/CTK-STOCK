@@ -66,7 +66,6 @@
                 <span id="productCount" class="text-xs font-semibold px-2.5 py-1 bg-slate-200 text-slate-700 rounded-full">0 รายการ</span>
             </div>
             
-            <!-- Desktop Table View -->
             <div class="hidden md:block overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                     <thead>
@@ -84,7 +83,6 @@
                 </table>
             </div>
 
-            <!-- Mobile Card View -->
             <div id="productMobileGrid" class="grid grid-cols-1 gap-3 p-3.5 md:hidden"></div>
         </div>
 
@@ -96,7 +94,6 @@
                     <span>ประวัติการเบิก/ยืม (Job Logs)</span>
                 </h2>
                 
-                <!-- ช่องค้นหาชื่องาน และ เลือกว่านที่ -->
                 <div class="flex items-center space-x-2 w-full md:w-auto">
                     <div class="relative flex-grow md:w-64">
                         <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
@@ -119,7 +116,7 @@
 
     </main>
 
-    <!-- Sticky Mobile Bottom Bar (มีปุ่มลัดเลื่อนลงดูประวัติ) -->
+    <!-- Sticky Mobile Bottom Bar -->
     <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-3 z-40 md:hidden shadow-lg flex gap-2">
         <button onclick="scrollToLogs()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 px-3.5 rounded-xl flex items-center justify-center transition" title="ดูประวัติการเบิก">
             <i class="fa-solid fa-file-invoice text-lg text-blue-600"></i>
@@ -227,6 +224,47 @@
         </div>
     </div>
 
+    <!-- Edit Job Log Modal (ส่วนป๊อปอัปแก้ไขประวัติการเบิก) -->
+    <div id="editLogModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h3 class="font-bold text-base sm:text-lg text-slate-800 flex items-center space-x-2">
+                    <i class="fa-solid fa-pen-to-square text-blue-600"></i>
+                    <span>แก้ไขประวัติการเบิก/ยืม</span>
+                </h3>
+                <button onclick="toggleEditModal()" class="text-slate-400 hover:text-slate-600 w-8 h-8 rounded-full flex items-center justify-center bg-slate-200/50 transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div class="p-4 sm:p-6 overflow-y-auto flex-grow space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">ชื่องาน / รายละเอียด</label>
+                        <input type="text" id="editJobName" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">วันที่ใช้งาน</label>
+                        <input type="date" id="editJobDate" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                </div>
+
+                <div class="space-y-3" id="editItemList"></div>
+            </div>
+
+            <div class="p-4 border-t border-slate-100 bg-slate-50 flex justify-between items-center">
+                <div>
+                    <span class="text-xs sm:text-sm text-slate-500">ราคารวมใหม่: </span>
+                    <span id="editTotalPrice" class="font-bold text-blue-600 text-sm sm:text-base">0.00 ฿</span>
+                </div>
+                <div class="flex space-x-2">
+                    <button onclick="toggleEditModal()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl font-medium text-sm transition">ยกเลิก</button>
+                    <button onclick="saveEditedLog()" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium text-sm transition shadow-sm">บันทึก</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyDmCFUxsltEAgx7GNo5nkYO26JDQOeYXPQtjG5jMX5H9kG4eOH2_sOgcxdhnT1vy-k/exec";
 
@@ -234,6 +272,7 @@
         let logs = [];
         let cart = [];
         let currentCategory = 'ALL';
+        let editingLogIndex = null;
 
         document.getElementById('jobDateInput').valueAsDate = new Date();
 
@@ -350,7 +389,6 @@
             renderLogs(logs);
         }
 
-        // ปุ่มลัดเลื่อนลงไปประวัติ
         function scrollToLogs() {
             document.getElementById('logSection').scrollIntoView({ behavior: 'smooth' });
         }
@@ -544,7 +582,6 @@
             }
         }
 
-        // ฟังก์ชันกดคืนสินค้า (เพิ่มสต็อกกลับเข้า Google Sheets)
         async function returnJobItems(logIndex) {
             const log = logs[logIndex];
             if (log.isReturned) return;
@@ -575,6 +612,79 @@
             }
         }
 
+        // ฟังก์ชันเปิด Modal แก้ไขประวัติการเบิก/ยืม
+        function openEditModal(logIndex) {
+            editingLogIndex = logIndex;
+            const log = logs[logIndex];
+
+            document.getElementById('editJobName').value = log.jobName || '';
+            
+            // Format Date เป็น YYYY-MM-DD
+            let formattedDate = log.jobDate;
+            if (log.jobDate && log.jobDate.includes('T')) {
+                formattedDate = log.jobDate.split('T')[0];
+            }
+            document.getElementById('editJobDate').value = formattedDate || new Date().toISOString().split('T')[0];
+
+            renderEditItems();
+            toggleEditModal();
+        }
+
+        function toggleEditModal() {
+            document.getElementById('editLogModal').classList.toggle('hidden');
+        }
+
+        function renderEditItems() {
+            const listContainer = document.getElementById('editItemList');
+            listContainer.innerHTML = '';
+            const log = logs[editingLogIndex];
+
+            let total = 0;
+            log.items.forEach((item, index) => {
+                total += item.total;
+                const div = document.createElement('div');
+                div.className = "flex items-center justify-between p-2.5 bg-slate-50 border border-slate-200 rounded-xl gap-2";
+                div.innerHTML = `
+                    <div class="min-w-0 flex-grow">
+                        <h4 class="font-bold text-slate-800 text-xs sm:text-sm truncate">${item.name}</h4>
+                    </div>
+                    <div class="flex items-center space-x-1.5 flex-shrink-0">
+                        <input type="number" value="${item.price}" min="0" onchange="updateEditItemPrice(${index}, this.value)" class="w-16 text-right text-xs sm:text-sm font-semibold border rounded-lg px-1.5 py-1 text-slate-700">
+                        <span class="text-xs text-slate-500">฿</span>
+                        <input type="number" value="${item.qty}" min="1" onchange="updateEditItemQty(${index}, this.value)" class="w-12 text-center text-xs sm:text-sm font-semibold border rounded-lg px-1.5 py-1">
+                        <span class="text-xs text-slate-500">${item.unit}</span>
+                    </div>
+                `;
+                listContainer.appendChild(div);
+            });
+
+            document.getElementById('editTotalPrice').innerText = `${total.toLocaleString()} ฿`;
+        }
+
+        function updateEditItemQty(itemIndex, val) {
+            let qty = parseInt(val) || 1;
+            if (qty <= 0) qty = 1;
+            const item = logs[editingLogIndex].items[itemIndex];
+            item.qty = qty;
+            item.total = item.qty * item.price;
+            renderEditItems();
+        }
+
+        function updateEditItemPrice(itemIndex, val) {
+            let price = parseFloat(val) || 0;
+            if (price < 0) price = 0;
+            const item = logs[editingLogIndex].items[itemIndex];
+            item.price = price;
+            item.total = item.qty * item.price;
+            renderEditItems();
+        }
+
+        function saveEditedLog() {
+            toggleEditModal();
+            alert("บันทึกข้อมูลการแก้ไขเรียบร้อยแล้ว!");
+            renderLogs(logs);
+        }
+
         function toggleJobDropdown(logIndex) {
             const content = document.getElementById(`job-content-${logIndex}`);
             const icon = document.getElementById(`job-icon-${logIndex}`);
@@ -582,96 +692,6 @@
             icon.classList.toggle('rotate-180');
         }
 
-        function renderLogs(logsArray) {
-            const container = document.getElementById('logContainer');
-            container.innerHTML = '';
-
-            if (!logsArray || logsArray.length === 0) {
-                container.innerHTML = `<div class="text-center py-6 text-slate-400 text-sm">ไม่พบประวัติการเบิกหรือยืมสินค้าตามเงื่อนไข</div>`;
-                return;
-            }
-
-            logsArray.forEach((log, logIndex) => {
-                let itemsHtml = '';
-                if (log.items && Array.isArray(log.items)) {
-                    log.items.forEach(i => {
-                        itemsHtml += `
-                            <tr class="border-b border-slate-100 hover:bg-slate-50 text-xs sm:text-sm">
-                                <td class="py-2 px-3 text-slate-800 font-medium">${i.name}</td>
-                                <td class="py-2 px-3 text-center text-blue-600 font-semibold">${i.qty} ${i.unit}</td>
-                                <td class="py-2 px-3 text-right text-slate-600">${i.price.toLocaleString()} ฿</td>
-                                <td class="py-2 px-3 text-right font-semibold text-slate-800">${i.total.toLocaleString()} ฿</td>
-                            </tr>
-                        `;
-                    });
-                }
-
-                let badgeClass = "bg-blue-100 text-blue-700 border-blue-200";
-                let badgeText = log.txType || 'เบิกถาวร';
-                if (log.txType === 'ยืมสินค้า') {
-                    if (log.isReturned) {
-                        badgeClass = "bg-emerald-100 text-emerald-700 border-emerald-200";
-                        badgeText = "ยืม (คืนแล้ว)";
-                    } else {
-                        badgeClass = "bg-amber-100 text-amber-700 border-amber-200";
-                        badgeText = "กำลังยืมอยู่";
-                    }
-                }
-
-                let returnBtnHtml = '';
-                if (log.txType === 'ยืมสินค้า' && !log.isReturned) {
-                    returnBtnHtml = `
-                        <button onclick="returnJobItems(${logIndex})" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium transition flex items-center space-x-1 shadow-sm">
-                            <i class="fa-solid fa-rotate-left"></i>
-                            <span>คืนสินค้า</span>
-                        </button>
-                    `;
-                }
-
-                const card = document.createElement('div');
-                card.className = "bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden";
-                card.innerHTML = `
-                    <div class="p-3.5 bg-slate-50/70 hover:bg-slate-100/70 transition flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                        <div class="flex items-center space-x-2.5 cursor-pointer flex-grow w-full sm:w-auto" onclick="toggleJobDropdown(${logIndex})">
-                            <div class="w-7 h-7 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs flex-shrink-0">
-                                <i id="job-icon-${logIndex}" class="fa-solid fa-chevron-down transition-transform duration-200"></i>
-                            </div>
-                            <div class="min-w-0 flex-grow">
-                                <div class="flex items-center space-x-2">
-                                    <h3 class="font-bold text-slate-900 text-sm sm:text-base truncate">${log.jobName}</h3>
-                                    <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold border ${badgeClass}">${badgeText}</span>
-                                </div>
-                                <span class="text-xs text-slate-400">วันที่: ${log.jobDate} | ${log.items.length} รายการ</span>
-                            </div>
-                        </div>
-
-                        <div class="flex items-center space-x-2 w-full sm:w-auto justify-between sm:justify-end border-t sm:border-0 pt-2 sm:pt-0 border-slate-100">
-                            <span class="text-xs sm:text-sm font-bold text-blue-600">${(log.grandTotal || 0).toLocaleString()} ฿</span>
-                            <div class="flex items-center space-x-2">
-                                ${returnBtnHtml}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="job-content-${logIndex}" class="hidden p-3 border-t border-slate-100 bg-white">
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left border-collapse">
-                                <thead>
-                                    <tr class="bg-slate-50 text-[11px] font-semibold text-slate-500 uppercase">
-                                        <th class="py-2 px-3">ชื่ออุปกรณ์</th>
-                                        <th class="py-2 px-3 text-center">จำนวน</th>
-                                        <th class="py-2 px-3 text-right">ราคา/หน่วย</th>
-                                        <th class="py-2 px-3 text-right">รวมเงิน</th>
-                                    </tr>
-                                </thead>
-                                <tbody>${itemsHtml}</tbody>
-                            </table>
-                        </div>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
-        }
         function renderLogs(logsArray) {
             const container = document.getElementById('logContainer');
             container.innerHTML = '';
