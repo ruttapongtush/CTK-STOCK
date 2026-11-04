@@ -804,5 +804,93 @@
         renderProducts();
         renderLogs();
     </script>
+    <script>
+    // 🌐 นำ Web App URL ที่ได้จาก Google Apps Script มาวางตรงนี้
+    const GOOGLE_SCRIPT_URL = "วาง_WEB_APP_URL_ที่นี่";
+
+    let products = [];
+    let cart = [];
+    let logs = [];
+    let currentCategory = 'ALL';
+    let editingLogIndex = null;
+
+    document.getElementById('jobDateInput').valueAsDate = new Date();
+
+    // 1. ฟังก์ชันดึงข้อมูลสินค้าจาก Google Sheets
+    async function loadProductsFromSheet() {
+        try {
+            const response = await fetch(GOOGLE_SCRIPT_URL);
+            const data = await response.json();
+            products = data;
+            renderProducts();
+        } catch (error) {
+            console.error("Error loading products:", error);
+            alert("ไม่สามารถดึงข้อมูลจาก Google Sheets ได้");
+        }
+    }
+
+    // เรียกใช้งานเมื่อเปิดหน้าเว็บ
+    loadProductsFromSheet();
+
+    // 2. ฟังก์ชันยืนยันทำรายการ (บันทึกลง Sheets และตัดสต็อก)
+    async function confirmCheckout() {
+        if (cart.length === 0) return;
+
+        const txType = document.getElementById('transactionType').value;
+        const jobName = document.getElementById('jobNameInput').value || (txType === 'ยืมสินค้า' ? 'ยืมอุปกรณ์ทั่วไป' : 'เบิกสินค้าทั่วไป');
+        const jobDate = document.getElementById('jobDateInput').value || new Date().toISOString().split('T')[0];
+
+        let sessionItems = [];
+        let sessionTotal = 0;
+
+        cart.forEach(item => {
+            const itemTotal = item.qty * item.price;
+            sessionTotal += itemTotal;
+            sessionItems.push({
+                id: item.id,
+                name: item.name,
+                qty: item.qty,
+                unit: item.unit,
+                price: item.price,
+                total: itemTotal
+            });
+        });
+
+        const payload = {
+            action: "checkout",
+            data: {
+                txType: txType,
+                jobName: jobName,
+                jobDate: jobDate,
+                items: sessionItems
+            }
+        };
+
+        try {
+            // ส่งข้อมูลไปบันทึกที่ Google Sheets ผ่าน Apps Script
+            await fetch(GOOGLE_SCRIPT_URL, {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            alert(`บันทึกข้อมูล "${txType}" เรียบร้อยแล้ว!`);
+            
+            // ล้างค่าในรถเข็นและโหลดข้อมูลสต็อกใหม่จาก Sheets
+            cart = [];
+            document.getElementById('jobNameInput').value = '';
+            updateCartUI();
+            toggleCartModal();
+            loadProductsFromSheet();
+            
+        } catch (error) {
+            console.error("Error saving checkout:", error);
+            alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+        }
+    }
+
+    // ฟังก์ชันอื่นๆ (renderProducts, filterCategory, ฯลฯ ใช้โค้ดชุดเดิมต่อท้ายได้เลย)
+</script>
 </body>
 </html>
