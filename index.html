@@ -61,7 +61,7 @@
             <div class="px-4 sm:px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                 <h2 class="font-bold text-slate-800 text-sm sm:text-base flex items-center space-x-2">
                     <i class="fa-solid fa-box-open text-blue-600"></i>
-                    <span>รายการสินค้าในคลัง (จาก Google Sheets)</span>
+                    <span>รายการสินค้าในคลัง (Google Sheets)</span>
                 </h2>
                 <span id="productCount" class="text-xs font-semibold px-2.5 py-1 bg-slate-200 text-slate-700 rounded-full">0 รายการ</span>
             </div>
@@ -89,23 +89,27 @@
         </div>
 
         <!-- Recent Logs Section -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div id="logSection" class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             <div class="px-4 sm:px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
                 <h2 class="font-bold text-slate-800 text-sm sm:text-base flex items-center space-x-2">
                     <i class="fa-solid fa-file-invoice text-blue-600"></i>
                     <span>ประวัติการเบิก/ยืม (Job Logs)</span>
                 </h2>
+                <button onclick="loadDataFromSheet()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-2.5 py-1 rounded-lg transition"><i class="fa-solid fa-rotate-right mr-1"></i>รีเฟรช</button>
             </div>
             <div id="logContainer" class="p-3.5 sm:p-6 space-y-3 sm:space-y-4">
-                <div class="text-center py-6 text-slate-400 text-sm">ยังไม่มีประวัติการเบิกหรือยืมสินค้า</div>
+                <div class="text-center py-6 text-slate-400 text-sm">กำลังโหลดข้อมูลประวัติ...</div>
             </div>
         </div>
 
     </main>
 
-    <!-- Sticky Mobile Bottom Bar -->
-    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-3 z-40 md:hidden shadow-lg">
-        <button onclick="toggleCartModal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl flex items-center justify-between shadow-md active:scale-[0.98] transition">
+    <!-- Sticky Mobile Bottom Bar (เพิ่มปุ่มลัดดูประวัติ) -->
+    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-3 z-40 md:hidden shadow-lg flex gap-2">
+        <button onclick="scrollToLogs()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 px-3.5 rounded-xl flex items-center justify-center transition active:scale-95 shadow-sm" title="ดูประวัติการเบิก/ยืม">
+            <i class="fa-solid fa-file-invoice text-lg text-blue-600"></i>
+        </button>
+        <button onclick="toggleCartModal()" class="flex-grow bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl flex items-center justify-between shadow-md active:scale-[0.98] transition">
             <div class="flex items-center space-x-2">
                 <i class="fa-solid fa-cart-shopping text-lg"></i>
                 <span class="text-sm">รถเข็นรายการ</span>
@@ -176,7 +180,7 @@
             <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
                 <h3 class="font-bold text-base sm:text-lg text-slate-800 flex items-center space-x-2">
                     <i class="fa-solid fa-pen-to-square text-blue-600"></i>
-                    <span>แก้ไขข้อมูลสินค้า</span>
+                    <span>แก้ไขสินค้า (บันทึกลง Google Sheets)</span>
                 </h3>
                 <button onclick="toggleEditProductModal()" class="text-slate-400 hover:text-slate-600 w-8 h-8 rounded-full flex items-center justify-center bg-slate-200/50 transition">
                     <i class="fa-solid fa-xmark"></i>
@@ -203,7 +207,7 @@
 
             <div class="p-4 border-t border-slate-100 bg-slate-50 flex justify-end space-x-3">
                 <button onclick="toggleEditProductModal()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl font-medium text-sm transition">ยกเลิก</button>
-                <button onclick="saveProductEditLocally()" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium text-sm transition shadow-sm">บันทึก</button>
+                <button onclick="saveProductEditToSheets()" id="saveEditBtn" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium text-sm transition shadow-sm">บันทึก</button>
             </div>
         </div>
     </div>
@@ -218,20 +222,22 @@
 
         document.getElementById('jobDateInput').valueAsDate = new Date();
 
-        // โหลดข้อมูลสินค้าจาก Google Sheets
-        async function loadProductsFromSheet() {
+        // 1. โหลดข้อมูลสินค้าและประวัติจาก Google Sheets
+        async function loadDataFromSheet() {
             try {
                 const response = await fetch(GOOGLE_SCRIPT_URL);
-                const data = await response.json();
-                products = data;
+                const resData = await response.json();
+                products = resData.products || [];
+                logs = resData.logs || [];
                 renderProducts();
+                renderLogs();
             } catch (error) {
-                console.error("Error loading products:", error);
+                console.error("Error loading data:", error);
                 alert("ไม่สามารถดึงข้อมูลจาก Google Sheets ได้");
             }
         }
 
-        loadProductsFromSheet();
+        loadDataFromSheet();
 
         function renderProducts(filterText = '') {
             const tbody = document.getElementById('productTableBody');
@@ -267,7 +273,7 @@
                     <td class="py-3.5 px-6 text-center"><span class="px-3 py-1 bg-blue-50 text-blue-600 rounded-xl font-bold text-xs shadow-sm inline-block">${p.stock} ${p.unit}</span></td>
                     <td class="py-3.5 px-6 text-right font-medium text-slate-700">${p.price.toLocaleString()} ฿</td>
                     <td class="py-3.5 px-6 text-center flex items-center justify-center space-x-2">
-                        <button onclick="openEditProductModal('${p.id}')" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-medium transition shadow-sm"><i class="fa-solid fa-pen"></i></button>
+                        <button onclick="openEditProductModal('${p.id}')" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-medium transition shadow-sm" title="แก้ไขสินค้า"><i class="fa-solid fa-pen"></i></button>
                         <button onclick="addToCart('${p.id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-xl text-xs font-medium transition shadow-sm flex items-center space-x-1"><i class="fa-solid fa-cart-plus"></i><span>ใส่รถเข็น</span></button>
                     </td>
                 `;
@@ -293,10 +299,91 @@
                         <button onclick="addToCart('${p.id}')" class="bg-blue-600 hover:bg-blue-700 text-white p-2.5 rounded-xl text-xs font-medium transition shadow-sm flex items-center justify-center">
                             <i class="fa-solid fa-cart-plus text-sm"></i>
                         </button>
+                        <button onclick="openEditProductModal('${p.id}')" class="bg-slate-100 hover:bg-slate-200 text-slate-600 p-2 rounded-xl text-xs transition text-center">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
                     </div>
                 `;
                 mobileGrid.appendChild(card);
             });
+        }
+
+        function renderLogs() {
+            const container = document.getElementById('logContainer');
+            container.innerHTML = '';
+
+            if (logs.length === 0) {
+                container.innerHTML = `<div class="text-center py-6 text-slate-400 text-sm">ยังไม่มีประวัติการเบิกหรือยืมสินค้าในระบบ</div>`;
+                return;
+            }
+
+            logs.forEach((log, logIndex) => {
+                let itemsHtml = '';
+                log.items.forEach(i => {
+                    itemsHtml += `
+                        <tr class="border-b border-slate-100 hover:bg-slate-50 text-xs sm:text-sm">
+                            <td class="py-2 px-3 text-slate-800 font-medium">${i.name}</td>
+                            <td class="py-2 px-3 text-center text-blue-600 font-semibold">${i.qty} ${i.unit}</td>
+                            <td class="py-2 px-3 text-right text-slate-600">${i.price.toLocaleString()} ฿</td>
+                            <td class="py-2 px-3 text-right font-semibold text-slate-800">${i.total.toLocaleString()} ฿</td>
+                        </tr>
+                    `;
+                });
+
+                let badgeClass = log.txType === 'ยืมสินค้า' ? "bg-amber-100 text-amber-700 border-amber-200" : "bg-blue-100 text-blue-700 border-blue-200";
+
+                const card = document.createElement('div');
+                card.className = "bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden";
+                card.innerHTML = `
+                    <div class="p-3.5 bg-slate-50/70 hover:bg-slate-100/70 transition flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                        <div class="flex items-center space-x-2.5 cursor-pointer flex-grow w-full sm:w-auto" onclick="toggleJobDropdown(${logIndex})">
+                            <div class="w-7 h-7 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs flex-shrink-0">
+                                <i id="job-icon-${logIndex}" class="fa-solid fa-chevron-down transition-transform duration-200"></i>
+                            </div>
+                            <div class="min-w-0 flex-grow">
+                                <div class="flex items-center space-x-2">
+                                    <h3 class="font-bold text-slate-900 text-sm sm:text-base truncate">${log.jobName}</h3>
+                                    <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold border ${badgeClass}">${log.txType}</span>
+                                </div>
+                                <span class="text-xs text-slate-400">วันที่: ${log.jobDate} | ${log.items.length} รายการ</span>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center space-x-2 w-full sm:w-auto justify-between sm:justify-end border-t sm:border-0 pt-2 sm:pt-0 border-slate-100">
+                            <span class="text-xs sm:text-sm font-bold text-blue-600">${log.grandTotal.toLocaleString()} ฿</span>
+                        </div>
+                    </div>
+
+                    <div id="job-content-${logIndex}" class="hidden p-3 border-t border-slate-100 bg-white">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-50 text-[11px] font-semibold text-slate-500 uppercase">
+                                        <th class="py-2 px-3">ชื่ออุปกรณ์</th>
+                                        <th class="py-2 px-3 text-center">จำนวน</th>
+                                        <th class="py-2 px-3 text-right">ราคา/หน่วย</th>
+                                        <th class="py-2 px-3 text-right">รวมเงิน</th>
+                                    </tr>
+                                </thead>
+                                <tbody>${itemsHtml}</tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function toggleJobDropdown(logIndex) {
+            const content = document.getElementById(`job-content-${logIndex}`);
+            const icon = document.getElementById(`job-icon-${logIndex}`);
+            content.classList.toggle('hidden');
+            icon.classList.toggle('rotate-180');
+        }
+
+        function scrollToLogs() {
+            const logElement = document.getElementById('logSection');
+            logElement.scrollIntoView({ behavior: 'smooth' });
         }
 
         function filterCategory(cat) {
@@ -420,40 +507,61 @@
             document.getElementById('editProductModal').classList.add('hidden');
         }
 
-        function saveProductEditLocally() {
+        // 2. ฟังก์ชันแก้ไขสินค้า -> บันทึกลง Google Sheets
+        async function saveProductEditToSheets() {
             const id = document.getElementById('editProdId').value;
             const newStock = parseFloat(document.getElementById('editProdStock').value) || 0;
             const newPrice = parseFloat(document.getElementById('editProdPrice').value) || 0;
-            const p = products.find(item => item.id === id);
-            if (p) {
-                p.stock = newStock;
-                p.price = newPrice;
+
+            const saveBtn = document.getElementById('saveEditBtn');
+            saveBtn.innerText = "กำลังบันทึก...";
+            saveBtn.disabled = true;
+
+            const payload = {
+                action: "updateProduct",
+                data: { id: id, stock: newStock, price: newPrice }
+            };
+
+            try {
+                await fetch(GOOGLE_SCRIPT_URL, {
+                    method: "POST",
+                    mode: "no-cors",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+                alert("บันทึกการแก้ไขลง Google Sheets เรียบร้อย!");
+                toggleEditProductModal();
+                loadDataFromSheet();
+            } catch (error) {
+                console.error("Error updating product:", error);
+                alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+            } finally {
+                saveBtn.innerText = "บันทึก";
+                saveBtn.disabled = false;
             }
-            toggleEditProductModal();
-            renderProducts(document.getElementById('searchInput').value);
         }
 
-        // ฟังก์ชันยืนยันทำรายการ (บันทึกลง Sheets และตัดสต็อก)
+        // 3. ฟังก์ชันยืนยันทำรายการ (เบิก/ยืม) -> บันทึกลง Google Sheets
         async function confirmCheckout() {
             if (cart.length === 0) return;
+
+            const checkoutBtn = document.getElementById('checkoutBtn');
+            checkoutBtn.innerText = "กำลังบันทึก...";
+            checkoutBtn.disabled = true;
 
             const txType = document.getElementById('transactionType').value;
             const jobName = document.getElementById('jobNameInput').value || (txType === 'ยืมสินค้า' ? 'ยืมอุปกรณ์ทั่วไป' : 'เบิกสินค้าทั่วไป');
             const jobDate = document.getElementById('jobDateInput').value || new Date().toISOString().split('T')[0];
 
             let sessionItems = [];
-            let sessionTotal = 0;
-
             cart.forEach(item => {
-                const itemTotal = item.qty * item.price;
-                sessionTotal += itemTotal;
                 sessionItems.push({
                     id: item.id,
                     name: item.name,
                     qty: item.qty,
                     unit: item.unit,
                     price: item.price,
-                    total: itemTotal
+                    total: item.qty * item.price
                 });
             });
 
@@ -476,16 +584,17 @@
                 });
 
                 alert(`บันทึกข้อมูล "${txType}" เรียบร้อยแล้ว!`);
-                
                 cart = [];
                 document.getElementById('jobNameInput').value = '';
                 updateCartUI();
                 toggleCartModal();
-                loadProductsFromSheet(); // โหลดสต็อกล่าสุดจาก Google Sheets อีกครั้ง
-                
+                loadDataFromSheet();
             } catch (error) {
                 console.error("Error saving checkout:", error);
                 alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+            } finally {
+                checkoutBtn.innerText = "ยืนยันทำรายการ";
+                checkoutBtn.disabled = false;
             }
         }
     </script>
