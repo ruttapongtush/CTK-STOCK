@@ -96,7 +96,7 @@
                     <span>ประวัติการเบิก/ยืม (Job Logs)</span>
                 </h2>
                 
-                <!-- ส่วนเพิ่มช่องค้นหาประวัติ (ชื่องาน และ วันที่) -->
+                <!-- ช่องค้นหาชื่องาน และ เลือกว่านที่ -->
                 <div class="flex items-center space-x-2 w-full md:w-auto">
                     <div class="relative flex-grow md:w-64">
                         <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
@@ -119,10 +119,10 @@
 
     </main>
 
-    <!-- Sticky Mobile Bottom Bar -->
+    <!-- Sticky Mobile Bottom Bar (มีปุ่มลัดเลื่อนลงดูประวัติ) -->
     <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-3 z-40 md:hidden shadow-lg flex gap-2">
         <button onclick="scrollToLogs()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 px-3.5 rounded-xl flex items-center justify-center transition" title="ดูประวัติการเบิก">
-            <i class="fa-solid fa-file-invoice text-lg"></i>
+            <i class="fa-solid fa-file-invoice text-lg text-blue-600"></i>
         </button>
         <button onclick="toggleCartModal()" class="flex-grow bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl flex items-center justify-between shadow-md transition">
             <div class="flex items-center space-x-2">
@@ -237,7 +237,6 @@
 
         document.getElementById('jobDateInput').valueAsDate = new Date();
 
-        // 1. โหลดข้อมูลสินค้าและประวัติจาก Google Sheets
         async function loadDataFromSheet() {
             try {
                 const response = await fetch(GOOGLE_SCRIPT_URL);
@@ -277,7 +276,6 @@
             filtered.forEach(p => {
                 const imgSrc = p.image ? p.image : 'https://via.placeholder.com/150?text=No+Image';
 
-                // Desktop Table Row
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-slate-50/80 transition border-b border-slate-100";
                 tr.innerHTML = `
@@ -294,7 +292,6 @@
                 `;
                 tbody.appendChild(tr);
 
-                // Mobile Card Item
                 const card = document.createElement('div');
                 card.className = "bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between gap-3";
                 card.innerHTML = `
@@ -334,7 +331,6 @@
             renderProducts(query);
         }
 
-        // ฟังก์ชันกรองประวัติการเบิกตามชื่องานและวันที่
         function filterLogs() {
             const keyword = document.getElementById('logSearchInput').value.toLowerCase();
             const selectedDate = document.getElementById('logDateFilter').value;
@@ -354,6 +350,7 @@
             renderLogs(logs);
         }
 
+        // ปุ่มลัดเลื่อนลงไปประวัติ
         function scrollToLogs() {
             document.getElementById('logSection').scrollIntoView({ behavior: 'smooth' });
         }
@@ -465,7 +462,6 @@
             document.getElementById('editProductModal').classList.add('hidden');
         }
 
-        // บันทึกการแก้ไขสินค้าลง Google Sheets
         async function saveProductEditToSheet() {
             const id = document.getElementById('editProdId').value;
             const newStock = parseFloat(document.getElementById('editProdStock').value) || 0;
@@ -493,7 +489,6 @@
             }
         }
 
-        // ยืนยันทำรายการเบิก/ยืม
         async function confirmCheckout() {
             if (cart.length === 0) return;
 
@@ -549,6 +544,37 @@
             }
         }
 
+        // ฟังก์ชันกดคืนสินค้า (เพิ่มสต็อกกลับเข้า Google Sheets)
+        async function returnJobItems(logIndex) {
+            const log = logs[logIndex];
+            if (log.isReturned) return;
+
+            if (!confirm(`ยืนยันการคืนสินค้าของงาน "${log.jobName}"? \nระบบจะทำการคืนจำนวนสินค้ากลับเข้าสต็อกหลัก`)) return;
+
+            const payload = {
+                action: "returnJob",
+                data: {
+                    jobName: log.jobName,
+                    items: log.items
+                }
+            };
+
+            try {
+                await fetch(GOOGLE_SCRIPT_URL, {
+                    method: "POST",
+                    mode: "no-cors",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+
+                alert(`ทำการคืนสินค้างาน "${log.jobName}" และเพิ่มสต็อกกลับเรียบร้อยแล้ว!`);
+                loadDataFromSheet();
+            } catch (error) {
+                console.error("Error returning items:", error);
+                alert("เกิดข้อผิดพลาดในการคืนสินค้า");
+            }
+        }
+
         function toggleJobDropdown(logIndex) {
             const content = document.getElementById(`job-content-${logIndex}`);
             const icon = document.getElementById(`job-icon-${logIndex}`);
@@ -582,6 +608,25 @@
 
                 let badgeClass = "bg-blue-100 text-blue-700 border-blue-200";
                 let badgeText = log.txType || 'เบิกถาวร';
+                if (log.txType === 'ยืมสินค้า') {
+                    if (log.isReturned) {
+                        badgeClass = "bg-emerald-100 text-emerald-700 border-emerald-200";
+                        badgeText = "ยืม (คืนแล้ว)";
+                    } else {
+                        badgeClass = "bg-amber-100 text-amber-700 border-amber-200";
+                        badgeText = "กำลังยืมอยู่";
+                    }
+                }
+
+                let returnBtnHtml = '';
+                if (log.txType === 'ยืมสินค้า' && !log.isReturned) {
+                    returnBtnHtml = `
+                        <button onclick="returnJobItems(${logIndex})" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium transition flex items-center space-x-1 shadow-sm">
+                            <i class="fa-solid fa-rotate-left"></i>
+                            <span>คืนสินค้า</span>
+                        </button>
+                    `;
+                }
 
                 const card = document.createElement('div');
                 card.className = "bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden";
@@ -596,12 +641,15 @@
                                     <h3 class="font-bold text-slate-900 text-sm sm:text-base truncate">${log.jobName}</h3>
                                     <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold border ${badgeClass}">${badgeText}</span>
                                 </div>
-                                <span class="text-xs text-slate-400">วันที่: ${log.jobDate} | รายการทั้งหมด</span>
+                                <span class="text-xs text-slate-400">วันที่: ${log.jobDate} | ${log.items.length} รายการ</span>
                             </div>
                         </div>
 
                         <div class="flex items-center space-x-2 w-full sm:w-auto justify-between sm:justify-end border-t sm:border-0 pt-2 sm:pt-0 border-slate-100">
                             <span class="text-xs sm:text-sm font-bold text-blue-600">${(log.grandTotal || 0).toLocaleString()} ฿</span>
+                            <div class="flex items-center space-x-2">
+                                ${returnBtnHtml}
+                            </div>
                         </div>
                     </div>
 
