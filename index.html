@@ -390,8 +390,11 @@
                             <span class="inline-block mt-1 text-[11px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md">คงเหลือ: ${p.stock} ${p.unit}</span>
                         </div>
                     </div>
-                    <div class="flex flex-col space-y-1.5 flex-shrink-0">
-                        <button onclick="addToCart('${p.id}')" class="bg-blue-600 hover:bg-blue-700 text-white p-2.5 rounded-xl text-xs font-medium transition shadow-sm flex items-center justify-center">
+                    <div class="flex items-center space-x-2 flex-shrink-0">
+                        <button onclick="openEditProductModal('${p.id}')" class="bg-slate-100 hover:bg-slate-200 text-slate-600 p-2.5 rounded-xl text-xs font-medium transition shadow-sm flex items-center justify-center" title="แก้ไขสินค้า">
+                            <i class="fa-solid fa-pen text-sm"></i>
+                        </button>
+                        <button onclick="addToCart('${p.id}')" class="bg-blue-600 hover:bg-blue-700 text-white p-2.5 rounded-xl text-xs font-medium transition shadow-sm flex items-center justify-center" title="ใส่รถเข็น">
                             <i class="fa-solid fa-cart-plus text-sm"></i>
                         </button>
                     </div>
